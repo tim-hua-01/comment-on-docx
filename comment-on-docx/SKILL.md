@@ -18,64 +18,51 @@ Add thoughtful stylistic and content-wise comments to Microsoft Word (.docx) doc
 
 <!-- Users can add information about their Python environment here -->
 
-If you're in the conda evals environment, python-docx is installed there.
-
-
-
-/Users/timhua/anaconda3/bin/conda run -n evals
+If you're in the conda evals environment, python-docx is installed there. Use: /Users/timhua/anaconda3/bin/conda run -n evals
 
 ## Workflow
 
-### Step 1: Install python-docx
-
-Verify `python-docx>=1.2.0` is installed
-
-### Step 2: Read the Complete Document
+### Step 1: Read the Complete Document
 
 **CRITICAL**: You MUST read the ENTIRE document before adding comments.
 
 Run the helper script to see all runs numbered:
 
 ```bash
-python .claude/skills/comment-on-docx/scripts/read_document_runs.py "document.docx"
+python scripts/read_document_runs.py "document.docx"
 ```
+
+(The script is bundled with this skill — resolve the path relative to this skill's directory.)
 
 **Output format:**
 ```
 📊 DOCUMENT STATISTICS:
-   Total runs: 245
-   Total characters: 25,431
-   Existing comments: 3
+   Total runs: 5
+   Total characters: 98
+   Existing comments: 1
 
 💬 EXISTING COMMENTS:
-   [Author Name] (Paragraph 5) Comment text...
-   [Other Author] (Paragraph 12) Another comment...
+   [Jane] (Paragraph 0) Nice title
 
 📖 ALL RUNS (numbered for easy reference):
 ================================================================================
 
 --- Paragraph 0 ---
-[Run 0] This is the title text
+[Run 0] My Document Title
 
 --- Paragraph 1 ---
-[Run 1] First sentence of paragraph 1. [ITALIC]
+[Run 1] Here is a sentence. [ITALIC]
 [Run 2] [EMPTY]
-[Run 3] Second sentence with some bolded text.
-[Run 4] more bolded text [BOLD]
-[Run 5] and back to normal.
-
-...
-
---- Paragraph N ---
-[Run 244] Final run text
+[Run 3] More text here.
+[Run 4] Final sentence. [BOLD]
 ================================================================================
 
-✅ Document read complete. Total runs: 245
-   (Make sure you see all runs from [Run 0] to [Run 244])
+✅ Document read complete. Total runs: 5
+   (Make sure you see all runs from [Run 0] to [Run 4])
 ```
 
 **What you're looking for:**
-- The total number of runs (e.g., 245)
+- The total number of runs
 - All runs numbered from `[Run 0]` to `[Run N-1]`
 - Formatting indicators: `[BOLD]`, `[ITALIC]`, `[EMPTY]`
 - Existing comments to avoid duplicating feedback
@@ -84,21 +71,20 @@ python .claude/skills/comment-on-docx/scripts/read_document_runs.py "document.do
 
 > **HARD STOP RULE**: If ANY run text ends with "..." or appears cut off, the document has NOT been fully read. You MUST stop immediately and fix the truncation issue before proceeding. Do NOT draft comments, do NOT write code, do NOT skip ahead. Commenting on text you haven't fully read produces low-quality, superficial feedback and wastes the user's time. There are no exceptions to this rule. Fix the read script or read the document another way first.
 
-### Step 3: Draft Comments
+### Step 2: Draft Comments
 
-Take time to formulate thoughtful, constructive comments. When you get to step three, open up references/commenting.md (bundled with this skill) for additional instructions. Read it in full.
+Take time to formulate thoughtful, constructive comments. Open up references/commenting.md (bundled with this skill) for additional instructions. Read it in full.
 
-### Step 4: Add Comments Using `add_comments_batch`
+### Step 3: Add Comments Using `add_comments_batch`
 
 **Always use `add_comments_batch`** to add comments. It processes comments in reverse run-ID order so that `subset_text` splits (which insert new runs) don't shift the IDs of comments that haven't been processed yet. This means you can use the run IDs straight from the read script output without worrying about offsets.
 
 Create a Python script using the helper functions:
 
 ```python
-import sys
-sys.path.insert(0, '.claude/skills/comment-on-docx')
 from docx import Document
 from scripts.docx_comment_helper import add_comments_batch, save_with_suffix, verify_comments
+# ↑ Import from this skill's scripts/ directory — add it to sys.path if needed
 
 # Load document
 doc = Document('your_document.docx')
@@ -107,7 +93,7 @@ doc = Document('your_document.docx')
 comments = [
     {"run_ids": 42, "text": "Your comment here"},
     {"run_ids": [10, 11, 12, 13], "text": "Comment on this whole section"},
-    {"run_ids": 42, "subset_text": "specific phrase", "text": "Comment on just this phrase"},
+    {"run_ids": 5, "subset_text": "specific phrase", "text": "Comment on just this phrase"},
 ]
 
 # Add all comments (order doesn't matter — batch handles it)
@@ -138,7 +124,7 @@ Each comment dict has these keys:
 
 ```python
 # Comment on just a phrase — the batch function handles the split safely
-{"run_ids": 42, "subset_text": "specific phrase", "text": "Comment on just this phrase"}
+{"run_ids": 5, "subset_text": "specific phrase", "text": "Comment on just this phrase"}
 ```
 
 **Important Notes:**
@@ -150,17 +136,35 @@ Each comment dict has these keys:
 - Bolded/italicized text is often already its own run
 - `subset_text` matching is case-insensitive, but beware of smart quotes/special characters in Word docs — when in doubt, comment on the whole run instead
 
-**⚠️ Multiple Comments on Same Run:**
-- If you need to add **two or more `subset_text` comments to the same run**, you must use **two passes**
-- First pass: add all comments in a batch, note any failures
-- Second pass: create a new script for failed comments, searching for them in the updated document
-- This is because `subset_text` splits create new runs, shifting the IDs of later splits on the same run
+**⚠️ Multiple `subset_text` Comments on the Same Run — Use Multiple Passes:**
+
+It's common and important to put multiple `subset_text` comments on the same run. For example, a long paragraph with no formatting changes is often a single run, and you'll want to comment on several different sentences within it. Targeting specific sentences is much better than dumping all your feedback into one comment on the whole paragraph — it makes the comments easier to read and act on. Don't let the mechanics of multi-pass commenting discourage you from writing precise, well-targeted comments.
+
+However, splitting a run with `subset_text` creates new runs and shifts IDs. So if you need N `subset_text` comments on the same run, you need N passes:
+
+1. **First pass**: add all comments in a batch (including one `subset_text` comment per run that needs multiple)
+2. **Re-read the document** using `read_document_runs.py` to get fresh run IDs
+3. **Second pass**: find the target text in the new run structure and add the next round of comments
+4. Repeat until all comments are placed
+
+**Example:** Suppose run 42 is a long paragraph:
+```
+[Run 42] The president has broad authority to control exports. This authority derives from
+the Export Administration Regulation. Chip restrictions would be a significant barrier because
+most compute is US-based. Replacing chips would be difficult since manufacturers are also
+covered by export controls.
+```
+
+You want to comment on three sentences. You'd need three passes:
+- Pass 1: `{"run_ids": 42, "subset_text": "This authority derives from the Export Administration Regulation", "text": "A comment."}`
+- Re-read document → the paragraph is now split into multiple runs with new IDs
+- Pass 2: find "Chip restrictions would be a significant barrier" in the new runs, add comment
+- Re-read again → pass 3: find "Replacing chips would be difficult", add comment
 
 **⚠️ Uniqueness Requirement:**
-- Each `subset_text` should be **unique within the document** (or unique enough to avoid ambiguity)
-- If the same phrase appears multiple times (e.g., "strategizes" in runs 10 and 50), the batch function may comment on the wrong occurrence after run ID shifts
-- **Best practice:** Use longer, more specific phrases (e.g., "The AI strategizes to avoid" instead of just "strategizes")
-- If you must comment on non-unique text, comment on the whole run instead of using `subset_text`
+- Each `subset_text` only needs to be unique **within its target run** (not the whole document) — the script searches only within the run identified by `run_ids`
+- If the same phrase appears twice within a single run, the script will match the first occurrence
+- **Best practice:** Use longer, more specific phrases to avoid ambiguity within the run
 
 **Understanding Runs:**
 
@@ -178,7 +182,7 @@ Example paragraph breakdown:
 [Run 2] " This is normal again."
 ```
 
-### Step 5: Save with Standard Suffix
+### Step 4: Save with Standard Suffix
 
 ```python
 # Save to new file
@@ -193,7 +197,7 @@ This creates: `your_document - claude commented.docx` Name your comment script [
 
 **Never overwrite the original file.**
 
-### Step 6: Verify Success
+### Step 5: Verify Success
 
 ```python
 # Verify comments were added
@@ -208,19 +212,20 @@ The verification shows:
 - Number of comments from your author name
 - Confirms successful addition
 
-## Complete Example
+## Complete Example (Multi-Pass)
+
+This example shows commenting on a document where some runs need multiple `subset_text` comments — requiring re-reads between passes.
 
 ```python
-import sys
-sys.path.insert(0, '.claude/skills/comment-on-docx')
 from docx import Document
 from scripts.docx_comment_helper import add_comments_batch, save_with_suffix, verify_comments
+# ↑ Import from this skill's scripts/ directory — add it to sys.path if needed
 
-# Load document
-doc = Document('research_post.docx')
+INPUT = 'research_post.docx'
 
-# Define all comments — order doesn't matter, batch handles it
-comments = [
+# --- Pass 1: all comments, including one subset_text per run that needs multiple ---
+doc = Document(INPUT)
+pass1_comments = [
     {
         "run_ids": 0,
         "text": "Style: The title is unclear. Consider: 'How Models Generalize Reward-Seeking Goals'",
@@ -230,26 +235,39 @@ comments = [
         "text": "Emphasis: Is the bolding necessary here? It may distract from the main point.",
     },
     {
+        # Run 42 is a long paragraph — we want to comment on two sentences in it.
+        # First subset_text comment goes in pass 1:
         "run_ids": 42,
-        "subset_text": "strategizes",
+        "subset_text": "The AI strategizes to maximize reward",
         "text": "Word choice: 'strategizes' assumes sophisticated reasoning. Justify or soften this claim.",
     },
     {
         "run_ids": [15, 16, 17, 18],
-        "text": "Structure: This paragraph is dense. Consider splitting into two: one for the problem, one for the solution.",
+        "text": "Structure: This paragraph is dense. Consider splitting into two.",
     },
 ]
+add_comments_batch(doc, pass1_comments)
+WORKING_COPY = save_with_suffix(doc, INPUT)  # never overwrite the original
 
-# Add all comments in one batch
-add_comments_batch(doc, comments)
+# --- Pass 2: re-read working copy to get fresh run IDs, add remaining comments ---
+# Run read_document_runs.py on the working copy to find the new run ID
+# for "Replacing existing chips would be difficult" — it was in run 42 before,
+# but after the split it's in a new run.
+doc = Document(WORKING_COPY)
+pass2_comments = [
+    {
+        "run_ids": 44,  # new run ID found after re-reading
+        "subset_text": "Replacing existing chips would be difficult",
+        "text": "Content: This claim needs support. Which manufacturers? What are the lead times?",
+    },
+]
+add_comments_batch(doc, pass2_comments)
+doc.save(WORKING_COPY)  # overwrite the working copy (not the original)
 
-# Save with standard suffix
-output = save_with_suffix(doc, 'research_post.docx')
-
-# Verify
-doc_verify = Document(output)
+# --- Verify ---
+doc_verify = Document(WORKING_COPY)
 count = verify_comments(doc_verify, expected_author="Claude")
-print(f"✅ Added {count} comments to {output}")
+print(f"✅ Added {count} comments to {WORKING_COPY}")
 ```
 
 ## Common Issues
@@ -288,35 +306,19 @@ print(f"✅ Added {count} comments to {output}")
 
 **Symptom**: Second `subset_text` comment on the same run fails with "Text not found in run"
 
-**Cause**: When you split a run with `subset_text`, it creates new runs and shifts IDs. If you try to add a second `subset_text` comment to the original run ID, it won't find the text because the run structure has changed.
+**Cause**: The first `subset_text` split the run into new runs with new IDs. The original run ID no longer contains the text you're looking for.
 
-**Example of the problem:**
-```python
-# Both comments target run 100, but with different subset_text
-{"run_ids": 100, "subset_text": "phrase A", "text": "Comment 1"},
-{"run_ids": 100, "subset_text": "phrase B", "text": "Comment 2"},  # This will fail!
-```
-
-**Solution**: Use a two-pass approach:
-1. **First pass**: Add all comments in a batch, note which ones fail
-2. **Second pass**: For failed comments, either:
-   - Comment on a range of runs instead: `{"run_ids": [100, 101, 102], "text": "..."}`
-   - Or create a second script that searches for the text and adds the comment
-
-**Alternative**: Use longer unique `subset_text` that's less likely to need multiple comments on the same run
+**Solution**: Re-read the document with `read_document_runs.py` to get fresh run IDs, then add the next comment targeting the correct new run. Repeat for each additional comment. See the "Multiple `subset_text` Comments on the Same Run" section above.
 
 ## Best Practices
 
 1. **Always read the complete document first** - Don't add comments without full context
 2. **Draft comments before coding** - Think through feedback before writing code
-3. **Use descriptive prefixes** - Start comments with "Style:", "Content:", "Clarity:", etc.
-4. **Be specific and constructive** - Explain the issue and suggest improvements
-5. **Never overwrite originals** - Always use `save_with_suffix()`
-6. **Verify after adding** - Check that comments were successfully added
-7. **Comment at appropriate granularity**:
-   - Whole paragraphs for structural/flow issues
-   - Specific sentences for clarity problems
-   - Individual words for terminology/word choice issues
+3. **Never overwrite originals** - Always use `save_with_suffix()`
+4. **Verify after adding** - Check that comments were successfully added
+5. **Comment at appropriate granularity** - Apply comments to words/sentences/paragraphs as appropriate
+
+Always follow the guideline in `references/commenting.md` when writing comments.
 
 ## Limitations
 
