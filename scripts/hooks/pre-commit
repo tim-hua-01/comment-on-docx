@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Pre-commit hook to automatically package the skill directory into a .skill file
+
+echo "🔄 Regenerating comment-on-docx.skill..."
+
+# Remove old .skill file if it exists
+rm -f comment-on-docx.skill
+
+# Create new .skill file (zip of the comment-on-docx directory)
+zip -r comment-on-docx.skill comment-on-docx/ -x "*.pyc" -x "__pycache__/*" -x "*.DS_Store" > /dev/null
+
+# Check if zip was successful
+if [ $? -eq 0 ]; then
+    echo "✅ Successfully created comment-on-docx.skill"
+    
+    # Add the updated .skill file to the staging area
+    git add comment-on-docx.skill
+    
+    echo "✅ Added comment-on-docx.skill to commit"
+else
+    echo "❌ Failed to create .skill file"
+    exit 1
+fi
+
+# Let the commit proceed
+exit 0

@@ -93,3 +93,24 @@ comment-on-docx/
 └── references/
     └── commenting.md                 # Editorial guidelines for comment quality
 ```
+
+## Development
+
+### Auto-packaging Hook (Optional)
+
+This repo includes a git pre-commit hook that automatically regenerates `comment-on-docx.skill` whenever you commit changes to the skill directory. Git hooks are local-only (not pushed to GitHub for security), so you'll need to install it manually after cloning.
+
+**To install the hook:**
+
+```bash
+cp scripts/hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+**Or manually package the skill:**
+
+```bash
+zip -r comment-on-docx.skill comment-on-docx/
+```
+
+The hook ensures the `.skill` file stays in sync with the source code automatically.
