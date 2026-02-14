@@ -1,9 +1,15 @@
+#Test docs
+test_docs/*
+*.docx
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
 CLAUDE.md
 .claude/*
+notes_and_todo.txt
+
 # C extensions
 *.so
 

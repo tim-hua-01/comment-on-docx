@@ -20,6 +20,8 @@ Add thoughtful stylistic and content-wise comments to Microsoft Word (.docx) doc
 
 If you're in the conda evals environment, python-docx is installed there. Use: /Users/timhua/anaconda3/bin/conda run -n evals
 
+If you're Claude running in the web, use your local python environment.
+
 ## Workflow
 
 ### Step 1: Read the Complete Document
@@ -73,7 +75,9 @@ python scripts/read_document_runs.py "document.docx"
 
 ### Step 2: Draft Comments
 
-Take time to formulate thoughtful, constructive comments. Open up references/commenting.md (bundled with this skill) for additional instructions. Read it in full.
+Take time to formulate thoughtful, constructive comments. Open up `references/commenting.md` (bundled with this skill) for additional instructions. Read it in full.
+
+MAKE SURE YOU RE-READ commenting.md after you've read the entire document as a refresher.
 
 ### Step 3: Add Comments Using `add_comments_batch`
 
@@ -181,6 +185,9 @@ Example paragraph breakdown:
 [Run 1] "This is bold." [BOLD]
 [Run 2] " This is normal again."
 ```
+
+#### Recall the instruction in commenting.md: First draft the python file, then review it for any potential changes, only after the review should you run the python file and add comments.
+
 
 ### Step 4: Save with Standard Suffix
 

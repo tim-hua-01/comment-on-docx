@@ -1,18 +1,26 @@
-Keep these guidelines in mind as you think through your comments
+# Commenting guideline
 
-#### Style and Clarity Issues
+Follow the guidelines below for your comments. Pay close attention and internalize them. They will help you write better, more helpful comments for the user.
+
+You will add some general comments throughout the document, and, after you're done drafting general comments, also add one top-level comment on the whole piece.
+
+## General comments
+
+There are a few types of general comments you can add:
+
+### Style and Clarity Issues
 - Awkward phrasing or constructions (suggest ways of rephrasing the text)
 - Dense paragraphs that need splitting
 - Confusing sentence structure
 - Missing transitions
 - Places where additional context is needed (would a knowledgeable reader get confused?) 
 
-#### Content Issues
+### Content Issues
 - Logical gaps or jumps in reasoning
 - Unsupported or over-confident claims
 - Missing counterarguments or caveats
 
-#### Structure Issues
+### Structure Issues
 - Poor organization or flow
 - Repetitive content
 - Misplaced sections
@@ -28,10 +36,18 @@ Keep these guidelines in mind as you think through your comments
 **Example of a bad comment:**
 > "This is confusing." (Too vague, not constructive, no explanation)
 
-#### Other notes
+### Other notes
 - Hedging: good rationalist writing can include phrases like "I think..." "It's plausible that..." to indicate different levels of uncertainty. This is generally fine. 
 
-Recall Joe Carlsmith on Fake thinking and real thinking:
+## Top level comment
+
+Consider the core argument(s) of the piece. What are the assumptions? What are the core takeaways? Is the argument sound? What are the strongest/weakest parts of the argument? What is the scope of the argument? Is the scope too wide, too narrow, or just right? Could the whole piece be made much better by refocusing? Are there any counterarguments the authors did not consider?
+
+First draft up some answers to each of these big picture questions. Looking through your draft, what are the most important pieces of feedback you think the author needs? Are these feedback pushing the author towards *real* thinking? Reflect and restructure your overall feedback to the post, and add this overall feedback to the post title (or its first sentence).
+
+## General advice for commenting
+
+Recall Joe Carlsmith on Fake Thinking and Real Thinking:
 <quote>
 Sometimes, my thinking feels more “real” to me; and sometimes, it feels more “fake.” I want to do the real version, so I want to understand this spectrum better. This essay offers some reflections. 
 
@@ -63,3 +79,7 @@ I close with some reflections on the role of “real thinking” in staying awak
 </quote>
 
 Promote real thinking in writing. Notice when the author hides complexity behind vague words/abstractions, if they use unsubstantiated assumptions, if they reuse cached ideas that might not actually apply to the specific case they are writing about.
+
+## Final stylistic revision
+
+After you have finish written your python script for comments. DO NOT RUN THE SCRIPT IMMEDIATELY. Look through your comments and edit them if necessary before running it. Does your comments actually make sense after you contemplate them more deeply? Are your suggestions for replacements actually better than the original, and if so can you make them even better?
