@@ -75,9 +75,9 @@ python scripts/read_document_runs.py "document.docx"
 
 ### Step 2: Draft Comments
 
-Take time to formulate thoughtful, constructive comments. Open up `references/commenting.md` (bundled with this skill) for additional instructions. Read it in full.
+Take time to formulate thoughtful, constructive comments. Open up `references/commenting.md` (bundled with this skill) for additional instructions. Read it in full and follow the instructions contained within. 
 
-MAKE SURE YOU RE-READ commenting.md after you've read the entire document as a refresher.
+MAKE SURE YOU RE-READ commenting.md after you've read the entire document as a refresher. Only then should you start drafting your comments.
 
 ### Step 3: Add Comments Using `add_comments_batch`
 
@@ -142,7 +142,7 @@ Each comment dict has these keys:
 
 **⚠️ Multiple `subset_text` Comments on the Same Run — Use Multiple Passes:**
 
-It's common and important to put multiple `subset_text` comments on the same run. For example, a long paragraph with no formatting changes is often a single run, and you'll want to comment on several different sentences within it. Targeting specific sentences is much better than dumping all your feedback into one comment on the whole paragraph — it makes the comments easier to read and act on. Don't let the mechanics of multi-pass commenting discourage you from writing precise, well-targeted comments.
+It's common and important to put multiple `subset_text` comments on the same run. For example, a long paragraph with no formatting changes is often a single run, and you may want to comment on several different sentences within it. Targeting specific sentences is much better than dumping all your feedback into one comment on the whole paragraph — it makes the comments easier to read and act on. Don't let the mechanics of multi-pass commenting discourage you from writing precise, well-targeted comments.
 
 However, splitting a run with `subset_text` creates new runs and shifts IDs. So if you need N `subset_text` comments on the same run, you need N passes:
 
