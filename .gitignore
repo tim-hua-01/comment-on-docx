@@ -1,5 +1,5 @@
 #Test docs
-test_docs/*
+test_docx/*
 *.docx
 
 # Byte-compiled / optimized / DLL files

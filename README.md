@@ -1,6 +1,22 @@
 # comment-on-docx
 
-A Claude Code skill that adds thoughtful, constructive comments to Microsoft Word (.docx) documents. It reads the document structure, drafts comments following editorial guidelines, and writes them back as native Word comments.
+A Claude Code skill that add comments to Microsoft Word (.docx) documents. It reads the document structure, drafts comments following editorial guidelines, and writes them back as native Word comments.
+
+## How to use
+
+### On Claude.ai
+
+Upload the `comment-on-docx.skill` file to [claude.ai/settings/capabilities](https://claude.ai/settings/capabilities). Claude will now use this skill every time you upload a Word doc and ask for comments on it. 
+
+### Locally with Claude Code
+
+This skill requires a python environment with the `python-docx >= 1.2.0` package. You might want to tell Claude which local python environment to use. Currently, `SKILL.md` has this quote about my (Tim's) local environment, which you should swap out.
+
+> If you're in the conda evals environment, python-docx is installed there. Use: /Users/timhua/anaconda3/bin/conda run -n evals
+
+Then, you can ask Claude to install the skill for you and use it directly from Claude code.
+
+## Remainder of the ReadME file is Claude written:
 
 ## What it does
 
@@ -35,6 +51,12 @@ Copy the `comment-on-docx` directory into your project's `.claude/skills/` folde
 # From your project root
 mkdir -p .claude/skills
 cp -r /path/to/this/repo/comment-on-docx .claude/skills/
+```
+
+On my personal computer, the command is:
+
+```bash
+rm -rf ~/.claude/skills/comment-on-docx && cp -r /Users/timhua/Documents/aisafety_githubs/comment-on-docx/comment-on-docx ~/.claude/skills/comment-on-docx && echo "Done" && ls ~/.claude/skills/comment-on-docx/
 ```
 
 The skill will be automatically discovered next time you start Claude Code in that project.
