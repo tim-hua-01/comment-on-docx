@@ -2,6 +2,8 @@
 
 A Claude Code skill that add comments to Microsoft Word (.docx) documents. It reads the document structure, drafts comments following editorial guidelines, and writes them back as native Word comments.
 
+For Google docs, you can download them as a Word doc, then have Claude comment it up. You could also then re-upload it to Google Drive (and optionally convert it back to a google doc file.)
+
 ## How to use
 
 ### On Claude.ai
