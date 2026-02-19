@@ -8,7 +8,7 @@ This is a skill that lets Claude add comments to Microsoft Word documents (.docx
 
 To use this with Google Docs, download the doc as a Word file first.[^1] You can then re-upload the commented version to Google Drive and optionally convert it back to a Google Doc. That said, it's often easier to open Claude's commented Word file alongside the original Google Doc and incorporate the feedback manually.
 
-I think Claude does a surprisingly good job at leaving constructive comments. For an example, see [this commented version](https://docs.google.com/document/d/19J3tkt-NeVkyLek8wWhElat8eHAqp6XaPdy1X57N5Qc/edit?usp=sharing) of Julian Statsny's post [Two proposed projects on abstract analogies for scheming](https://www.lesswrong.com/posts/5zsLpcTMtesgF7c8p/two-proposed-projects-on-abstract-analogies-for-scheming), produced with no additional instructions beyond "comment up this doc" ([transcript](https://claude.ai/share/c9a37ad8-1002-4ae6-9870-b1c4d603f00d)).
+I think Claude does a surprisingly good job at leaving constructive comments. For an example, see [this commented version](https://docs.google.com/document/d/19J3tkt-NeVkyLek8wWhElat8eHAqp6XaPdy1X57N5Qc/edit?usp=sharing) of Julian Statsny's post [Two proposed projects on abstract analogies for scheming](https://www.lesswrong.com/posts/5zsLpcTMtesgF7c8p/two-proposed-projects-on-abstract-analogies-for-scheming), produced with no additional instructions beyond "comment up this doc" ([transcript](https://claude.ai/share/c9a37ad8-1002-4ae6-9870-b1c4d603f00d)). I personally expect to use this skill on all future docs I write.
 
 [^1]: There technically is a Google Doc API, but everyone who I've talked to has had a bad time getting it to work, so we're sticking with this workaround for now.
 
@@ -17,6 +17,8 @@ I think Claude does a surprisingly good job at leaving constructive comments. Fo
 The skill gives Claude tools to read Word documents and add comments. By default, Claude writes a top-level comment on the whole piece, along with inline comments covering content, structure, style, and clarity. In practice, Claude tends to write around ten comments regardless of document length.
 
 Every time you send Claude a new document, you can also provide additional instructions to shape the output—for instance, asking for more extensive feedback or directing Claude to focus on a particular aspect of your document. To change guidelines that apply to all documents, edit `commenting.md`.
+
+You should probably use the latest Opus model with extended thinking for comments.
 
 ### On Claude.ai (easiest)
 
