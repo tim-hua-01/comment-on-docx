@@ -16,6 +16,41 @@ from docx.table import Table as TableCls
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 
 
+def _is_toc_sdt(sdt_element):
+    """Check if a structured document tag is a Table of Contents."""
+    sdt_pr = sdt_element.find(f'{W}sdtPr')
+    if sdt_pr is not None:
+        if sdt_pr.find(f'{W}docPartObj') is not None:
+            return True
+    return False
+
+
+def _iter_sdt_content(sdt_content, parent):
+    """Yield (Paragraph, table_info) for paragraphs and tables inside SDT content."""
+    for item in sdt_content:
+        tag = item.tag.split('}')[-1]
+        if tag == 'p':
+            yield ParagraphCls(item, parent), None
+        elif tag == 'tbl':
+            tbl = TableCls(item, parent)
+            num_rows = len(tbl.rows)
+            num_cols = len(tbl.columns)
+            for row_idx, row in enumerate(tbl.rows):
+                seen_tc = set()
+                for col_idx, cell in enumerate(row.cells):
+                    tc_id = id(cell._tc)
+                    if tc_id in seen_tc:
+                        continue
+                    seen_tc.add(tc_id)
+                    for para in cell.paragraphs:
+                        yield para, {
+                            'row': row_idx,
+                            'col': col_idx,
+                            'num_rows': num_rows,
+                            'num_cols': num_cols,
+                        }
+
+
 def _iter_all_runs(para):
     """
     Yield (run_element, is_hyperlink) for every <w:r> in the paragraph,
@@ -46,10 +81,13 @@ def _iter_all_runs(para):
 def _iter_document_paragraphs(doc):
     """
     Yield (Paragraph, table_info) for every paragraph in the document body,
-    in document order, including paragraphs inside table cells.
+    in document order, including paragraphs inside table cells and SDTs.
 
     table_info is None for body paragraphs, or a dict with row/col/dimensions
-    for table cell paragraphs.
+    for table cell paragraphs. Skips Table of Contents SDTs.
+
+    Note: must iterate in the same order as the reader's _iter_document_paragraphs
+    to keep global run IDs in sync.
     """
     body = doc.element.body
     for child in body:
@@ -75,6 +113,13 @@ def _iter_document_paragraphs(doc):
                             'num_rows': num_rows,
                             'num_cols': num_cols,
                         }
+        elif tag == 'sdt':
+            # Skip Table of Contents SDTs (duplicate heading text)
+            if _is_toc_sdt(child):
+                continue
+            sdt_content = child.find(f'{W}sdtContent')
+            if sdt_content is not None:
+                yield from _iter_sdt_content(sdt_content, body)
 
 
 def find_run_by_global_id(doc: Document, global_run_id: int):

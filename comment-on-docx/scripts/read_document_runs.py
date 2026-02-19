@@ -16,6 +16,7 @@ from docx.table import Table as TableCls
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 A = '{http://schemas.openxmlformats.org/drawingml/2006/main}'
 R_NS = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
+M = '{http://schemas.openxmlformats.org/officeDocument/2006/math}'
 
 
 def iter_all_runs(para, hyperlink_rels=None):
@@ -46,13 +47,48 @@ def iter_all_runs(para, hyperlink_rels=None):
     yield from _yield_runs(para._element)
 
 
+def _is_toc_sdt(sdt_element):
+    """Check if a structured document tag is a Table of Contents."""
+    sdt_pr = sdt_element.find(f'{W}sdtPr')
+    if sdt_pr is not None:
+        if sdt_pr.find(f'{W}docPartObj') is not None:
+            return True
+    return False
+
+
+def _iter_sdt_content(sdt_content, parent):
+    """Yield (Paragraph, table_info) for paragraphs and tables inside SDT content."""
+    for item in sdt_content:
+        tag = item.tag.split('}')[-1]
+        if tag == 'p':
+            yield ParagraphCls(item, parent), None
+        elif tag == 'tbl':
+            tbl = TableCls(item, parent)
+            num_rows = len(tbl.rows)
+            num_cols = len(tbl.columns)
+            for row_idx, row in enumerate(tbl.rows):
+                seen_tc = set()
+                for col_idx, cell in enumerate(row.cells):
+                    tc_id = id(cell._tc)
+                    if tc_id in seen_tc:
+                        continue
+                    seen_tc.add(tc_id)
+                    for para in cell.paragraphs:
+                        yield para, {
+                            'row': row_idx,
+                            'col': col_idx,
+                            'num_rows': num_rows,
+                            'num_cols': num_cols,
+                        }
+
+
 def _iter_document_paragraphs(doc):
     """
     Yield (Paragraph, table_info) for every paragraph in the document body,
-    in document order, including paragraphs inside table cells.
+    in document order, including paragraphs inside table cells and SDTs.
 
     table_info is None for body paragraphs, or a dict with row/col/dimensions
-    for table cell paragraphs.
+    for table cell paragraphs. Skips Table of Contents SDTs.
     """
     body = doc.element.body
     for child in body:
@@ -78,6 +114,13 @@ def _iter_document_paragraphs(doc):
                             'num_rows': num_rows,
                             'num_cols': num_cols,
                         }
+        elif tag == 'sdt':
+            # Skip Table of Contents SDTs (duplicate heading text)
+            if _is_toc_sdt(child):
+                continue
+            sdt_content = child.find(f'{W}sdtContent')
+            if sdt_content is not None:
+                yield from _iter_sdt_content(sdt_content, body)
 
 
 def extract_images(docx_path: str, output_dir: str = None) -> tuple:
@@ -172,6 +215,46 @@ def parse_footnotes(docx_path: str) -> dict:
     return footnotes
 
 
+def parse_endnotes(docx_path: str) -> dict:
+    """
+    Parse endnotes from word/endnotes.xml.
+
+    Returns:
+        dict mapping endnote ID (str) to endnote text.
+        Skips separator/continuation endnotes.
+    """
+    endnotes = {}
+    with zipfile.ZipFile(docx_path) as z:
+        if 'word/endnotes.xml' not in z.namelist():
+            return endnotes
+        en_xml = z.read('word/endnotes.xml')
+        en_tree = etree.fromstring(en_xml)
+        for en in en_tree.findall(f'{W}endnote'):
+            en_id = en.get(f'{W}id')
+            en_type = en.get(f'{W}type')
+            if en_type in ('separator', 'continuationSeparator'):
+                continue
+            text = ''.join(t.text or '' for t in en.iter(f'{W}t'))
+            if text.strip():
+                endnotes[en_id] = text.strip()
+    return endnotes
+
+
+def get_equations_in_paragraph(para_element) -> list:
+    """
+    Find <m:oMath> elements in a paragraph and return their text.
+    Equations use <m:t> for text instead of <w:t>.
+    """
+    equations = []
+    for child in para_element:
+        tag = child.tag.split('}')[-1]
+        if tag == 'oMath':
+            eq_text = ''.join(t.text or '' for t in child.iter(f'{M}t'))
+            if eq_text.strip():
+                equations.append(eq_text.strip())
+    return equations
+
+
 def read_document_runs(docx_path: str) -> dict:
     """
     Read document and return all runs numbered for easy reference.
@@ -211,14 +294,16 @@ def read_document_runs(docx_path: str) -> dict:
     if has_images:
         image_dir, rel_id_to_filename = extract_images(docx_path)
 
-    # Parse footnotes
+    # Parse footnotes and endnotes
     footnotes = parse_footnotes(docx_path)
+    endnotes = parse_endnotes(docx_path)
 
     # Count tables
     table_count = len(doc.element.body.findall(f'{W}tbl'))
 
     all_runs = []
     all_images = []
+    all_equations = []  # list of {'text': str, 'para_idx': int}
     run_counter = 0
     total_chars = 0
 
@@ -233,9 +318,11 @@ def read_document_runs(docx_path: str) -> dict:
             # Check for image in this run
             image_filename = get_image_in_element(run_elem, rel_id_to_filename) if rel_id_to_filename else None
 
-            # Check for footnote reference in this run
+            # Check for footnote/endnote references in this run
             fn_ref = run_elem.find(f'{W}footnoteReference')
             footnote_id = fn_ref.get(f'{W}id') if fn_ref is not None else None
+            en_ref = run_elem.find(f'{W}endnoteReference')
+            endnote_id = en_ref.get(f'{W}id') if en_ref is not None else None
 
             run_info = {
                 'global_run_id': run_counter,
@@ -247,6 +334,7 @@ def read_document_runs(docx_path: str) -> dict:
                 'hyperlink_url': hyperlink_url,
                 'image': image_filename,
                 'footnote_id': footnote_id,
+                'endnote_id': endnote_id,
                 'table_info': table_info,
             }
             all_runs.append(run_info)
@@ -272,6 +360,14 @@ def read_document_runs(docx_path: str) -> dict:
                     'para_idx': para_idx,
                     'in_run': None,
                 })
+
+        # Check for equations (m:oMath) in the paragraph
+        para_equations = get_equations_in_paragraph(para._element)
+        for eq_text in para_equations:
+            all_equations.append({
+                'text': eq_text,
+                'para_idx': para_idx,
+            })
 
     # Read existing comments and find which paragraphs they're in
     existing_comments = []
@@ -319,6 +415,8 @@ def read_document_runs(docx_path: str) -> dict:
         'images': all_images,
         'image_dir': image_dir,
         'footnotes': footnotes,
+        'endnotes': endnotes,
+        'equations': all_equations,
     }
 
 
@@ -337,12 +435,19 @@ def display_document_runs(docx_path: str) -> None:
     print(f"   Existing comments: {len(result['comments'])}")
     print(f"   Images: {len(result['images'])}")
     print(f"   Footnotes: {len(result['footnotes'])}")
+    print(f"   Endnotes: {len(result['endnotes'])}")
+    print(f"   Equations: {len(result['equations'])}")
     print(f"   Tables: {result['total_tables']}")
 
     if result['footnotes']:
         print(f"\n📝 FOOTNOTES:")
         for fn_id, fn_text in sorted(result['footnotes'].items(), key=lambda x: int(x[0])):
             print(f"   [Footnote {fn_id}] {fn_text}")
+
+    if result['endnotes']:
+        print(f"\n📝 ENDNOTES:")
+        for en_id, en_text in sorted(result['endnotes'].items(), key=lambda x: int(x[0])):
+            print(f"   [Endnote {en_id}] {en_text}")
 
     if result['image_dir'] and result['images']:
         # Deduplicate by filename (same image can appear multiple times)
@@ -379,6 +484,11 @@ def display_document_runs(docx_path: str) -> None:
         if img['in_run'] is None:
             para_level_images.setdefault(img['para_idx'], []).append(img)
 
+    # Build set of equations keyed by para_idx
+    para_equations = {}
+    for eq in result.get('equations', []):
+        para_equations.setdefault(eq['para_idx'], []).append(eq)
+
     current_para = -1
     in_table = False
     for run_info in result['runs']:
@@ -390,6 +500,11 @@ def display_document_runs(docx_path: str) -> None:
             if current_para in para_level_images:
                 for img in para_level_images[current_para]:
                     print(f"         [IMAGE: {img['filename']}]")
+
+            # Show equations from the previous paragraph
+            if current_para in para_equations:
+                for eq in para_equations[current_para]:
+                    print(f"         [EQUATION: {eq['text']}]")
 
             # Handle table transitions
             if table_info and not in_table:
@@ -421,26 +536,33 @@ def display_document_runs(docx_path: str) -> None:
             formatting.append('ITALIC')
         format_str = f" [{', '.join(formatting)}]" if formatting else ""
 
-        # Check for footnote reference
+        # Check for footnote/endnote references
         footnote_id = run_info.get('footnote_id')
+        endnote_id = run_info.get('endnote_id')
 
         # Display the run
         if not text and image:
             print(f"[Run {run_id}] [IMAGE: {image}]{format_str}")
         elif not text and footnote_id:
             print(f"[Run {run_id}] [FOOTNOTE {footnote_id}]")
+        elif not text and endnote_id:
+            print(f"[Run {run_id}] [ENDNOTE {endnote_id}]")
         elif not text:
             print(f"[Run {run_id}] [EMPTY]{format_str}")
         else:
             img_str = f" [IMAGE: {image}]" if image else ""
             fn_str = f" [FOOTNOTE {footnote_id}]" if footnote_id else ""
+            en_str = f" [ENDNOTE {endnote_id}]" if endnote_id else ""
             display_text = text
-            print(f"[Run {run_id}] {display_text}{format_str}{img_str}{fn_str}")
+            print(f"[Run {run_id}] {display_text}{format_str}{img_str}{fn_str}{en_str}")
 
-    # Show paragraph-level images for the last paragraph
+    # Show paragraph-level images and equations for the last paragraph
     if current_para in para_level_images:
         for img in para_level_images[current_para]:
             print(f"         [IMAGE: {img['filename']}]")
+    if current_para in para_equations:
+        for eq in para_equations[current_para]:
+            print(f"         [EQUATION: {eq['text']}]")
 
     # Close trailing table if document ends inside one
     if in_table:
