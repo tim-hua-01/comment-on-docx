@@ -32,15 +32,13 @@ Then, you can ask Claude to install the skill for you and use it directly from C
 
 ## Claude's workflow
 
-Claude first reads the Word file using the `read_document_runs.py` script. The read script allows Claude to view images, footnotes, links, and tables. Then, Claude is supposed to re-read the `references/commenting.md` guidelines, and draft its comments. After successfully drafting the comments, Claude is told to reflect on them to check that they are indeed good comments. (It currently doesn't seem to do much at this stage by default, but you can prompt it to.)
+Claude first reads the Word file using the `read_document_runs.py` script. In Word's internal format, a "run" is the smallest unit of consistently-formatted text — a paragraph might contain several runs if different words are bolded, italicized, or otherwise formatted differently. The script reads the document run-by-run and assigns each run a number, which Claude uses to anchor comments to precise locations in the document. The read script also allows Claude to view images, footnotes, links, and tables. Then, Claude is supposed to re-read the `references/commenting.md` guidelines, and draft its comments. After successfully drafting the comments, Claude is told to reflect on them to check that they are indeed good comments. (It currently doesn't seem to do much at this stage by default, but you can prompt it to.) Then, it adds comments to the doc, possibly taking multiple passes if the comment requires breaking a run into multiple pieces. Finally, it saves the file.
 
 ## Usage notes:
 
 - Existing comment threads are squashed if you download a Google doc (or, at least it is squashed for me). Claude can see where the existing comments are, but it is currently not instructed to respond to them.
 
 - If there are suggestions with track changes on, Claude will read the file as if all changes are accepted.
-
-- By default, I noticed that Claude tends to draft around ten comments in total regardless of the lengths of the piece. You can just prompt it to write more or less comments, although if you're doing this it might not bring up all the grammatical errors.
 
 - Claude tends to barrel ahead even when something goes wrong. If comments appear missing or the document seems cut off, it may continue drafting anyway rather than stopping to flag the issue. I believe the read issues that caused truncation are now fixed, and `SKILL.md` instructs Claude to stop and raise an error if it suspects any part of the document wasn't fully read. Still, this may be a source of error.
 
