@@ -1,6 +1,7 @@
 #Test docs
 test_docx/*
 *.docx
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -12,7 +13,6 @@ notes_and_todo.txt
 
 # C extensions
 *.so
-
 # Distribution / packaging
 .Python
 build/

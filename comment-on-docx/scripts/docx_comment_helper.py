@@ -363,7 +363,7 @@ def add_comments_batch(
     return (successes, failures)
 
 
-def save_with_suffix(doc: Document, original_path: str, suffix: str = "claude commented") -> str:
+def save_with_suffix(doc: Document, original_path: str, suffix: str = "claude commented", output_dir: Optional[str] = None) -> str:
     """
     Save document with a suffix added to the filename.
     
@@ -371,14 +371,17 @@ def save_with_suffix(doc: Document, original_path: str, suffix: str = "claude co
         doc: Document object to save
         original_path: Original file path
         suffix: Suffix to add (default: "claude commented")
+        output_dir: Directory to save the output file. If None, saves next to the original file.
     
     Returns:
         The output file path
     """
     original_file = Path(original_path)
     stem = original_file.stem
-    output_filename = f"{stem} - {suffix}.docx"
-    output_path = original_file.parent / output_filename
+    extension = original_file.suffix or ".docx"
+    output_filename = f"{stem} - {suffix}{extension}"
+    parent = Path(output_dir) if output_dir is not None else original_file.parent
+    output_path = parent / output_filename
     
     doc.save(str(output_path))
     print(f"💾 Saved to: {output_path}")

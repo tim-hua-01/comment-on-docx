@@ -27,6 +27,8 @@ If you're Claude running in the web, use your local python environment.
 
 ### Step 0: Read this SKILL.md file, and read the commenting guidelines in `references/commenting.md`
 
+Make sure you read the SKILL.md file FULLY until the [SKILL.md Ends] flag at the end. Do NOT truncate this file in ANY WAY while reading it.
+
 ### Step 1: Read the Complete Document
 
 **CRITICAL**: You MUST read the ENTIRE document before adding comments.
@@ -236,6 +238,19 @@ This creates: `your_document - claude commented.docx` Name your comment script [
 
 **Never overwrite the original file.**
 
+**Web environment (read-only uploads):**
+
+When running in the Claude web environment, the uploads directory (`/mnt/user-data/uploads/`) is read-only. You must specify an output directory to avoid an OSError:
+```python
+output_path = save_with_suffix(
+    doc,
+    'your_document.docx',
+    output_dir='/home/claude/'
+)
+```
+
+Then copy the final file to `/mnt/user-data/outputs/` for the user to download.
+
 ### Step 5: Verify Success
 
 ```python
@@ -286,7 +301,7 @@ pass1_comments = [
     },
 ]
 add_comments_batch(doc, pass1_comments)
-WORKING_COPY = save_with_suffix(doc, INPUT)  # never overwrite the original
+WORKING_COPY = save_with_suffix(doc, INPUT, output_dir='/home/claude/')  # never overwrite the original
 
 # --- Pass 2: re-read working copy to get fresh run IDs, add remaining comments ---
 # Run read_document_runs.py on the working copy to find the new run ID
@@ -301,7 +316,7 @@ pass2_comments = [
     },
 ]
 add_comments_batch(doc, pass2_comments)
-doc.save(WORKING_COPY)  # overwrite the working copy (not the original)
+doc.save(WORKING_COPY)  # overwrite the working copy in /home/claude/ (not the original)
 
 # --- Verify ---
 doc_verify = Document(WORKING_COPY)
@@ -361,9 +376,8 @@ Always follow the guideline in `references/commenting.md` when writing comments.
 
 ## Limitations
 
-- Very large documents (>100,000 words) may be slow or fail to read completely
+- Very large documents (>100,000 words) may be slow or fail to read completely. If you cannot read the whole document, STOP AND LET THE USER KNOW.
 - Comments cannot be added to headers, footers, or within existing comments
-- Track changes are NOT supported (requires different approach)
 - Nested or overlapping comments are not supported
 
 ## Helper Script Details
@@ -382,3 +396,5 @@ Always follow the guideline in `references/commenting.md` when writing comments.
 - `verify_comments()`: Confirm comments were added successfully
 - Handles run splitting automatically when using `subset_text`
 - Preserves formatting when splitting runs
+
+[SKILL.md Ends]

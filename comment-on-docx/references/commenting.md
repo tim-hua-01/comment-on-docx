@@ -1,6 +1,6 @@
 # Commenting guideline
 
-Follow the guidelines below for your comments. Pay close attention and internalize them. They will help you write better, more helpful comments for the user.
+Follow the guidelines below for your comments. Pay close attention and internalize them. They will help you write better, more helpful comments for the user. Make sure to read the guideline in full before commenting.
 
 You will add some general comments throughout the document, and, after you're done drafting general comments, also add one top-level comment on the whole piece.
 
@@ -8,12 +8,12 @@ You will add some general comments throughout the document, and, after you're do
 
 There are a few types of general comments you can add:
 
-### Style and Clarity Issues
-- Awkward phrasing or constructions (suggest ways of rephrasing the text)
+### Grammar, Style, and Clarity Issues
+- Comment on any grammatical issues you spot: no grammatical issue should be left unaddressed!
+- Awkward phrasing or confusing sentence structure (suggest ways of rephrasing the text)
 - Dense paragraphs that need splitting
-- Confusing sentence structure
 - Missing transitions
-- Places where additional context is needed (would a knowledgeable reader get confused?) 
+- Places where additional context is needed (would a knowledgeable reader get confused?)
 
 ### Content Issues
 - Logical gaps or jumps in reasoning
@@ -31,7 +31,7 @@ There are a few types of general comments you can add:
 - Suggests concrete improvements when possible
 
 **Example of a good comment:**
-> "Content: This objection—that retroactive reward is too infrequent to matter—is strong but dismissed quickly. If retroactive training happens 'a few times at most' per episode, and the reward seeker faces tradeoffs with immediate reward, why would this ever become a dominant motivation? You need a clearer argument for why even weak/infrequent retroactive reward would be selected for."
+> "Content: The concept of 'abstract analogies' could use sharper definition. What structural features must a behavior share with scheming to count as informative? Without criteria for what makes an analogy good or bad, it's hard to evaluate whether the proposed projects capture the relevant dynamics of scheming—or are just interesting ML experiments in their own right."
 
 **Example of a bad comment:**
 > "This is confusing." (Too vague, not constructive, no explanation)
@@ -43,7 +43,7 @@ There are a few types of general comments you can add:
 
 Consider the core argument(s) of the piece. What are the assumptions? What are the core takeaways? Is the argument sound? What are the strongest/weakest parts of the argument? What is the scope of the argument? Is the scope too wide, too narrow, or just right? Could the whole piece be made much better by refocusing? Are there any counterarguments the authors did not consider?
 
-First draft up some answers to each of these big picture questions. Looking through your draft, what are the most important pieces of feedback you think the author needs? Are these feedback pushing the author towards *real* thinking? Reflect and restructure your overall feedback to the post, and add this overall feedback to the post title (or its first sentence).
+First draft up some answers to each of these big picture questions. Looking through your draft, what are the most important pieces of feedback you think the author needs? Does your feedback pushing the author towards *real* thinking? Reflect and restructure your overall feedback to the post, and add this overall feedback to the post title (or its first sentence).
 
 ## Commenting guidelines
 
