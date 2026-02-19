@@ -14,7 +14,7 @@ I think Claude does a surprisingly good job at leaving constructive comments. Fo
 
 ## How to use this skill
 
-The skill gives Claude tools to read Word documents and add comments. By default, Claude writes a top-level comment on the whole piece, along with inline comments covering content, structure, style, and clarity. In practice, Claude tends to write around ten comments regardless of document length.
+The skill gives Claude tools to read and comment on Word documents (including figures, tables, and footnotes). By default, Claude writes a top-level comment on the whole piece, along with inline comments covering content, structure, style, and clarity. In practice, Claude tends to write around ten comments regardless of document length.
 
 Every time you send Claude a new document, you can also provide additional instructions to shape the output—for instance, asking for more extensive feedback or directing Claude to focus on a particular aspect of your document. To change guidelines that apply to all documents, edit `commenting.md`.
 
