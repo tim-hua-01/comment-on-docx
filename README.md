@@ -4,11 +4,11 @@
 
 <small>[Tim Hua](https://timhua.me/)</small>
 
-This is a Claude Code skill that lets Claude add comments to Microsoft Word documents (.docx). It reads the document (including figures, tables, and footnotes), drafts comments following editorial guidelines in `references/commenting.md`, and adds them as native Word comments. It does not modify the original file and instead outputs a "claude commented" version.
+This is a skill that lets Claude add comments to Microsoft Word documents (.docx). Claude reads the document—including figures, tables, and footnotes—drafts comments following the editorial guidelines in `references/commenting.md`, and inserts them as native Word comments. It never modifies the original file, instead outputting a separate "claude commented" copy.
 
-To use this skill together with Google docs, you'll need to download the GDoc as a Word document first.[^1] You could also then re-upload it to Google Drive (and optionally convert it back to a google doc file.) However, it might be more convenient to just have Claude's word comments open on the side while you incorporate the changes in the main Google doc.
+To use this with Google Docs, download the doc as a Word file first.[^1] You can then re-upload the commented version to Google Drive and optionally convert it back to a Google Doc. That said, it's often easier to open Claude's commented Word file alongside the original Google Doc and incorporate the feedback manually.
 
-I think Claude does a surprisingly good job at leaving constructive comments. You can see an example [here](https://docs.google.com/document/d/1O_7J3BPImrRZF0eSO9wKai4loR0rgLFo/edit?usp=sharing&ouid=100901641241487519495&rtpof=true&sd=true), where it comments on Julian Statsny's post [Two proposed projects on abstract analogies for scheming](https://www.lesswrong.com/posts/5zsLpcTMtesgF7c8p/two-proposed-projects-on-abstract-analogies-for-scheming).
+I think Claude does a surprisingly good job at leaving constructive comments. For an example, see [this commented version](https://docs.google.com/document/d/19J3tkt-NeVkyLek8wWhElat8eHAqp6XaPdy1X57N5Qc/edit?usp=sharing) of Julian Statsny's post [Two proposed projects on abstract analogies for scheming](https://www.lesswrong.com/posts/5zsLpcTMtesgF7c8p/two-proposed-projects-on-abstract-analogies-for-scheming), produced with no additional instructions beyond "comment up this doc" ([transcript](https://claude.ai/share/c9a37ad8-1002-4ae6-9870-b1c4d603f00d)).
 
 [^1]: There technically is a Google Doc API, but everyone who I've talked to has had a bad time getting it to work, so we're sticking with this workaround for now.
 
@@ -16,7 +16,7 @@ I think Claude does a surprisingly good job at leaving constructive comments. Yo
 
 The skill gives Claude tools to read Word documents and add comments. By default, Claude writes a top-level comment on the whole piece, along with inline comments covering content, structure, style, and clarity. In practice, Claude tends to write around ten comments regardless of document length.
 
-Every time you send Claude a new document, you can also provide additional instructions to shape the output — for instance, asking for more extensive feedback or directing Claude to focus on a particular aspect of your document. To change guidelines that apply to all documents, edit `commenting.md`.
+Every time you send Claude a new document, you can also provide additional instructions to shape the output—for instance, asking for more extensive feedback or directing Claude to focus on a particular aspect of your document. To change guidelines that apply to all documents, edit `commenting.md`.
 
 ### On Claude.ai (easiest)
 
@@ -32,7 +32,7 @@ Then, you can ask Claude to install the skill for you and use it directly from C
 
 ## Claude's workflow
 
-Claude first reads the Word file using the `read_document_runs.py` script. In Word's internal format, a "run" is the smallest unit of consistently-formatted text — a paragraph might contain several runs if different words are bolded, italicized, or otherwise formatted differently. The script reads the document run-by-run and assigns each run a number, which Claude uses to anchor comments to precise locations in the document. The read script also allows Claude to view images, footnotes, links, and tables. Then, Claude is supposed to re-read the `references/commenting.md` guidelines, and draft its comments. After successfully drafting the comments, Claude is told to reflect on them to check that they are indeed good comments. (It currently doesn't seem to do much at this stage by default, but you can prompt it to.) Then, it adds comments to the doc, possibly taking multiple passes if the comment requires breaking a run into multiple pieces. Finally, it saves the file.
+Claude first reads the Word file using the read_document_runs.py script. In Word's internal format, a "run" is the smallest unit of consistently-formatted text—a paragraph might contain several runs if different words are bolded, italicized, or otherwise styled. The script numbers each run sequentially, giving Claude precise anchors for placing comments. It also extracts images, footnotes, links, and tables. Next, Claude re-reads the references/commenting.md guidelines and drafts its comments. After drafting, Claude reviews its own comments for depth, concreteness, and coherence—though by default it doesn't do much at this stage without prompting. It then adds comments to the document, taking multiple passes if a comment targets a specific phrase within a run (which requires splitting the run). Finally, it saves the file.
 
 ## Usage notes:
 
