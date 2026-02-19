@@ -10,6 +10,8 @@ import os
 import tempfile
 import zipfile
 from typing import Optional
+from docx.text.paragraph import Paragraph as ParagraphCls
+from docx.table import Table as TableCls
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 A = '{http://schemas.openxmlformats.org/drawingml/2006/main}'
@@ -37,6 +39,40 @@ def iter_all_runs(para):
             # 'del' is implicitly skipped (proposed deletions)
 
     yield from _yield_runs(para._element)
+
+
+def _iter_document_paragraphs(doc):
+    """
+    Yield (Paragraph, table_info) for every paragraph in the document body,
+    in document order, including paragraphs inside table cells.
+
+    table_info is None for body paragraphs, or a dict with row/col/dimensions
+    for table cell paragraphs.
+    """
+    body = doc.element.body
+    for child in body:
+        tag = child.tag.split('}')[-1]
+        if tag == 'p':
+            yield ParagraphCls(child, body), None
+        elif tag == 'tbl':
+            tbl = TableCls(child, body)
+            num_rows = len(tbl.rows)
+            num_cols = len(tbl.columns)
+            for row_idx, row in enumerate(tbl.rows):
+                seen_tc = set()
+                for col_idx, cell in enumerate(row.cells):
+                    # Skip duplicate cells from merged cells
+                    tc_id = id(cell._tc)
+                    if tc_id in seen_tc:
+                        continue
+                    seen_tc.add(tc_id)
+                    for para in cell.paragraphs:
+                        yield para, {
+                            'row': row_idx,
+                            'col': col_idx,
+                            'num_rows': num_rows,
+                            'num_cols': num_cols,
+                        }
 
 
 def extract_images(docx_path: str, output_dir: str = None) -> tuple:
@@ -138,10 +174,11 @@ def read_document_runs(docx_path: str) -> dict:
 
     Returns:
         dict with keys:
-            - 'runs': list of dicts with run info (para_idx, run_idx, text, bold, italic, is_hyperlink, image, footnote_id)
+            - 'runs': list of dicts with run info (para_idx, run_idx, text, bold, italic, is_hyperlink, image, footnote_id, table_info)
             - 'comments': list of existing comments with their anchored runs
             - 'total_runs': total number of runs
             - 'total_chars': total character count
+            - 'total_tables': number of tables in the document
             - 'images': list of image info dicts (filename, path, para_idx, in_run)
             - 'image_dir': path to directory containing extracted images (or None)
             - 'footnotes': dict mapping footnote ID to text
@@ -161,13 +198,16 @@ def read_document_runs(docx_path: str) -> dict:
     # Parse footnotes
     footnotes = parse_footnotes(docx_path)
 
+    # Count tables
+    table_count = len(doc.element.body.findall(f'{W}tbl'))
+
     all_runs = []
     all_images = []
     run_counter = 0
     total_chars = 0
 
-    # Collect all runs from all paragraphs, including hyperlink runs
-    for para_idx, para in enumerate(doc.paragraphs):
+    # Collect all runs from all paragraphs, including table cells and hyperlink runs
+    for para_idx, (para, table_info) in enumerate(_iter_document_paragraphs(doc)):
         for run_elem, is_hyperlink in iter_all_runs(para):
             rPr = run_elem.find(f'{W}rPr')
             text = run_elem.findtext(f'{W}t', default='')
@@ -190,6 +230,7 @@ def read_document_runs(docx_path: str) -> dict:
                 'is_hyperlink': is_hyperlink,
                 'image': image_filename,
                 'footnote_id': footnote_id,
+                'table_info': table_info,
             }
             all_runs.append(run_info)
             total_chars += len(text)
@@ -221,7 +262,7 @@ def read_document_runs(docx_path: str) -> dict:
         try:
             comment_locations = {}  # comment_id -> para_idx
 
-            for para_idx, para in enumerate(doc.paragraphs):
+            for para_idx, (para, _) in enumerate(_iter_document_paragraphs(doc)):
                 para_elem = para._element
                 # Look for commentRangeStart or commentReference in this paragraph
                 for elem in para_elem.iter():
@@ -257,6 +298,7 @@ def read_document_runs(docx_path: str) -> dict:
         'comments': existing_comments,
         'total_runs': len(all_runs),
         'total_chars': total_chars,
+        'total_tables': table_count,
         'images': all_images,
         'image_dir': image_dir,
         'footnotes': footnotes,
@@ -278,6 +320,7 @@ def display_document_runs(docx_path: str) -> None:
     print(f"   Existing comments: {len(result['comments'])}")
     print(f"   Images: {len(result['images'])}")
     print(f"   Footnotes: {len(result['footnotes'])}")
+    print(f"   Tables: {result['total_tables']}")
 
     if result['footnotes']:
         print(f"\n📝 FOOTNOTES:")
@@ -320,7 +363,10 @@ def display_document_runs(docx_path: str) -> None:
             para_level_images.setdefault(img['para_idx'], []).append(img)
 
     current_para = -1
+    in_table = False
     for run_info in result['runs']:
+        table_info = run_info.get('table_info')
+
         # Print paragraph separator when we move to a new paragraph
         if run_info['para_idx'] != current_para:
             # Show paragraph-level images from the previous paragraph
@@ -328,8 +374,19 @@ def display_document_runs(docx_path: str) -> None:
                 for img in para_level_images[current_para]:
                     print(f"         [IMAGE: {img['filename']}]")
 
+            # Handle table transitions
+            if table_info and not in_table:
+                in_table = True
+                print(f"\n--- Table ({table_info['num_rows']} rows × {table_info['num_cols']} cols) ---")
+            elif not table_info and in_table:
+                in_table = False
+                print(f"--- End Table ---")
+
             current_para = run_info['para_idx']
-            print(f"\n--- Paragraph {current_para} ---")
+            if table_info:
+                print(f"\n  --- Paragraph {current_para} [Row {table_info['row']}, Col {table_info['col']}] ---")
+            else:
+                print(f"\n--- Paragraph {current_para} ---")
 
         # Format the run display
         run_id = run_info['global_run_id']
@@ -366,6 +423,10 @@ def display_document_runs(docx_path: str) -> None:
     if current_para in para_level_images:
         for img in para_level_images[current_para]:
             print(f"         [IMAGE: {img['filename']}]")
+
+    # Close trailing table if document ends inside one
+    if in_table:
+        print(f"--- End Table ---")
 
     print("=" * 80)
     print(f"\n✅ Document read complete. Total runs: {result['total_runs']}")

@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union, List, Optional
 import copy as python_copy
+from docx.text.paragraph import Paragraph as ParagraphCls
+from docx.table import Table as TableCls
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 
@@ -37,16 +39,50 @@ def _iter_all_runs(para):
     yield from _yield_runs(para._element)
 
 
+def _iter_document_paragraphs(doc):
+    """
+    Yield (Paragraph, table_info) for every paragraph in the document body,
+    in document order, including paragraphs inside table cells.
+
+    table_info is None for body paragraphs, or a dict with row/col/dimensions
+    for table cell paragraphs.
+    """
+    body = doc.element.body
+    for child in body:
+        tag = child.tag.split('}')[-1]
+        if tag == 'p':
+            yield ParagraphCls(child, body), None
+        elif tag == 'tbl':
+            tbl = TableCls(child, body)
+            num_rows = len(tbl.rows)
+            num_cols = len(tbl.columns)
+            for row_idx, row in enumerate(tbl.rows):
+                seen_tc = set()
+                for col_idx, cell in enumerate(row.cells):
+                    # Skip duplicate cells from merged cells
+                    tc_id = id(cell._tc)
+                    if tc_id in seen_tc:
+                        continue
+                    seen_tc.add(tc_id)
+                    for para in cell.paragraphs:
+                        yield para, {
+                            'row': row_idx,
+                            'col': col_idx,
+                            'num_rows': num_rows,
+                            'num_cols': num_cols,
+                        }
+
+
 def find_run_by_global_id(doc: Document, global_run_id: int):
     """
     Find a run by its global ID (sequential numbering across all paragraphs,
-    including runs inside hyperlinks).
+    including runs inside hyperlinks and table cells).
 
     Returns:
         (paragraph, run_element, is_hyperlink) or (None, None, None) if not found
     """
     run_counter = 0
-    for para in doc.paragraphs:
+    for para, _table_info in _iter_document_paragraphs(doc):
         for run_elem, is_hyp in _iter_all_runs(para):
             if run_counter == global_run_id:
                 return para, run_elem, is_hyp
