@@ -104,19 +104,47 @@ def get_paragraph_level_images(para_element, rel_id_to_filename: dict) -> list:
     return images
 
 
+def parse_footnotes(docx_path: str) -> dict:
+    """
+    Parse footnotes from word/footnotes.xml.
+
+    Returns:
+        dict mapping footnote ID (str) to footnote text.
+        Skips separator/continuation footnotes (IDs 0 and -1).
+    """
+    footnotes = {}
+    with zipfile.ZipFile(docx_path) as z:
+        if 'word/footnotes.xml' not in z.namelist():
+            return footnotes
+        fn_xml = z.read('word/footnotes.xml')
+        fn_tree = etree.fromstring(fn_xml)
+        for fn in fn_tree.findall(f'{W}footnote'):
+            fn_id = fn.get(f'{W}id')
+            # Skip separator footnotes (type="separator" or "continuationSeparator")
+            fn_type = fn.get(f'{W}type')
+            if fn_type in ('separator', 'continuationSeparator'):
+                continue
+            # Extract all text, handling <w:ins>/<w:del> the same way as the body
+            text = ''.join(t.text or '' for t in fn.iter(f'{W}t'))
+            if text.strip():
+                footnotes[fn_id] = text.strip()
+    return footnotes
+
+
 def read_document_runs(docx_path: str) -> dict:
     """
     Read document and return all runs numbered for easy reference.
-    Also extracts images from the document.
+    Also extracts images and footnotes from the document.
 
     Returns:
         dict with keys:
-            - 'runs': list of dicts with run info (para_idx, run_idx, text, bold, italic, is_hyperlink, image)
+            - 'runs': list of dicts with run info (para_idx, run_idx, text, bold, italic, is_hyperlink, image, footnote_id)
             - 'comments': list of existing comments with their anchored runs
             - 'total_runs': total number of runs
             - 'total_chars': total character count
             - 'images': list of image info dicts (filename, path, para_idx, in_run)
             - 'image_dir': path to directory containing extracted images (or None)
+            - 'footnotes': dict mapping footnote ID to text
     """
     doc = Document(docx_path)
 
@@ -129,6 +157,9 @@ def read_document_runs(docx_path: str) -> dict:
 
     if has_images:
         image_dir, rel_id_to_filename = extract_images(docx_path)
+
+    # Parse footnotes
+    footnotes = parse_footnotes(docx_path)
 
     all_runs = []
     all_images = []
@@ -146,6 +177,10 @@ def read_document_runs(docx_path: str) -> dict:
             # Check for image in this run
             image_filename = get_image_in_element(run_elem, rel_id_to_filename) if rel_id_to_filename else None
 
+            # Check for footnote reference in this run
+            fn_ref = run_elem.find(f'{W}footnoteReference')
+            footnote_id = fn_ref.get(f'{W}id') if fn_ref is not None else None
+
             run_info = {
                 'global_run_id': run_counter,
                 'para_idx': para_idx,
@@ -154,6 +189,7 @@ def read_document_runs(docx_path: str) -> dict:
                 'italic': italic,
                 'is_hyperlink': is_hyperlink,
                 'image': image_filename,
+                'footnote_id': footnote_id,
             }
             all_runs.append(run_info)
             total_chars += len(text)
@@ -223,6 +259,7 @@ def read_document_runs(docx_path: str) -> dict:
         'total_chars': total_chars,
         'images': all_images,
         'image_dir': image_dir,
+        'footnotes': footnotes,
     }
 
 
@@ -240,6 +277,12 @@ def display_document_runs(docx_path: str) -> None:
     print(f"   Total characters: {result['total_chars']:,}")
     print(f"   Existing comments: {len(result['comments'])}")
     print(f"   Images: {len(result['images'])}")
+    print(f"   Footnotes: {len(result['footnotes'])}")
+
+    if result['footnotes']:
+        print(f"\n📝 FOOTNOTES:")
+        for fn_id, fn_text in sorted(result['footnotes'].items(), key=lambda x: int(x[0])):
+            print(f"   [Footnote {fn_id}] {fn_text}")
 
     if result['image_dir'] and result['images']:
         # Deduplicate by filename (same image can appear multiple times)
@@ -303,15 +346,21 @@ def display_document_runs(docx_path: str) -> None:
             formatting.append('ITALIC')
         format_str = f" [{', '.join(formatting)}]" if formatting else ""
 
+        # Check for footnote reference
+        footnote_id = run_info.get('footnote_id')
+
         # Display the run
         if not text and image:
             print(f"[Run {run_id}] [IMAGE: {image}]{format_str}")
+        elif not text and footnote_id:
+            print(f"[Run {run_id}] [FOOTNOTE {footnote_id}]")
         elif not text:
             print(f"[Run {run_id}] [EMPTY]{format_str}")
         else:
             img_str = f" [IMAGE: {image}]" if image else ""
+            fn_str = f" [FOOTNOTE {footnote_id}]" if footnote_id else ""
             display_text = text
-            print(f"[Run {run_id}] {display_text}{format_str}{img_str}")
+            print(f"[Run {run_id}] {display_text}{format_str}{img_str}{fn_str}")
 
     # Show paragraph-level images for the last paragraph
     if current_para in para_level_images:
