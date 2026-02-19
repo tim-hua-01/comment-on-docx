@@ -17,15 +17,24 @@ W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 def _iter_all_runs(para):
     """
     Yield (run_element, is_hyperlink) for every <w:r> in the paragraph,
-    in document order, including runs nested inside <w:hyperlink>.
+    in document order, including runs nested inside <w:hyperlink> and <w:ins>.
+    Skips runs inside <w:del> (proposed deletions / track changes).
+    This shows the "all suggestions accepted" version of the document.
     """
-    for child in para._element:
-        tag = child.tag.split('}')[-1]
-        if tag == 'r':
-            yield child, False
-        elif tag == 'hyperlink':
-            for inner in child.findall(f'{W}r'):
-                yield inner, True
+    def _yield_runs(container):
+        for child in container:
+            tag = child.tag.split('}')[-1]
+            if tag == 'r':
+                yield child, False
+            elif tag == 'hyperlink':
+                for inner in child.findall(f'{W}r'):
+                    yield inner, True
+            elif tag == 'ins':
+                # Proposed insertions — recurse to pick up runs and hyperlinks
+                yield from _yield_runs(child)
+            # 'del' is implicitly skipped (proposed deletions)
+
+    yield from _yield_runs(para._element)
 
 
 def find_run_by_global_id(doc: Document, global_run_id: int):
