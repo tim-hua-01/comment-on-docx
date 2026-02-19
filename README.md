@@ -1,8 +1,14 @@
 # comment-on-docx
 
-A Claude Code skill that add comments to Microsoft Word (.docx) documents. It reads the document structure, drafts comments following editorial guidelines, and writes them back as native Word comments.
+<small>February 2026</small>
 
-For Google docs, you can download them as a Word doc, then have Claude comment it up. You could also then re-upload it to Google Drive (and optionally convert it back to a google doc file.)
+<small>[Tim Hua](https://timhua.me/)</small>
+
+This is Claude Code skill that lets Claude add comments to Microsoft Word documents (.docx). It reads the document (including figures), drafts comments following editorial guidelines in `references/commenting.md`, and adds them as native Word comments. It doesn't modify the original file and instead outputs a "claude commented" version.
+
+To use this skill together with Google docs, you'll need to download the GDoc as a Word document first.[^1] You could also then re-upload it to Google Drive (and optionally convert it back to a google doc file.) It might be more convenient to just have Claude's word comments open on the side while one incorporates the changes in the main google doc though.
+
+[^1]: There technically is a Google Doc API, but everyone who I've talked to has had a bad time getting it to work, so we're sticking with this workaround for now.
 
 ## How to use
 
@@ -12,11 +18,24 @@ Upload the `comment-on-docx.skill` file to [claude.ai/settings/capabilities](htt
 
 ### Locally with Claude Code
 
-This skill requires a python environment with the `python-docx >= 1.2.0` package. You might want to tell Claude which local python environment to use. Currently, `SKILL.md` has this quote about my (Tim's) local environment, which you should swap out.
+This skill requires a python environment with the `python-docx >= 1.2.0` package. You might want to first tell Claude which local python environment to use by modifying `SKILL.md`. Currently, `SKILL.md` has this quote about my (Tim's) local environment, which you should swap out.
 
 > If you're in the conda evals environment, python-docx is installed there. Use: /Users/timhua/anaconda3/bin/conda run -n evals
 
 Then, you can ask Claude to install the skill for you and use it directly from Claude code.
+
+## Claude's workflow
+
+Claude reads the 
+
+## Usage notes:
+
+- Existing comment threads are squashed if you download a Google doc (or, at least it is squashed for me). Claude can see where the existing comments are, but it is currently not instructed to respond to them.
+
+- By default, I noticed that Claude tends to draft around ten comments in total regardless of the lengths of the piece. You can just prompt it to write more or less comments, although if you're doing this it might not bring up all the grammatical errors.
+
+- Claude loves to keep
+
 
 ## Remainder of the ReadME file is Claude written:
 
@@ -55,11 +74,7 @@ mkdir -p .claude/skills
 cp -r /path/to/this/repo/comment-on-docx .claude/skills/
 ```
 
-On my personal computer, the command is:
-
-```bash
-rm -rf ~/.claude/skills/comment-on-docx && cp -r /Users/timhua/Documents/aisafety_githubs/comment-on-docx/comment-on-docx ~/.claude/skills/comment-on-docx && echo "Done" && ls ~/.claude/skills/comment-on-docx/
-```
+Or you can use a symlink.
 
 The skill will be automatically discovered next time you start Claude Code in that project.
 

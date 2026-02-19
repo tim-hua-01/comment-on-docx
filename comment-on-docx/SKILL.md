@@ -86,7 +86,14 @@ python scripts/read_document_runs.py "document.docx"
 
 **Verification**: Confirm you see the final run matching `Total runs - 1`. If the output seems truncated or you don't see all runs, **STOP and report the issue**.
 
-> **HARD STOP RULE**: If ANY run text ends with "..." or appears cut off, the document has NOT been fully read. You MUST stop immediately and fix the truncation issue before proceeding. Do NOT draft comments, do NOT write code, do NOT skip ahead. Commenting on text you haven't fully read produces low-quality, superficial feedback and wastes the user's time. There are no exceptions to this rule. Fix the read script or read the document another way first. If you fail to fix the script, simply inform the user that you did not successfully read the document and do not proceed further. 
+> **HARD STOP RULE**: If ANY part of the read output looks wrong, incomplete, or suspicious, the document has NOT been fully read. You MUST stop immediately. Do NOT draft comments, do NOT write code, do NOT skip ahead. Simply inform the user that something looks off and what it is. Do nothing else. There are NO exceptions.
+>
+> This includes but is not limited to:
+> - Run text that ends with "..." or appears cut off
+> - Existing comments that show blank/missing text (e.g. `[Author] (Paragraph 5)` with no comment content — real comments always have text)
+> - Unexpected gaps, missing sections, or anything that just looks off
+>
+> **The spirit of this rule: if you have not read ALL of the document's content — runs, comments, images, everything — you are not ready to comment.** Proceeding without full context produces low-quality, superficial feedback and wastes the user's time. Your job is to be a careful reader first. If something looks weird in the output, it probably IS weird, and you need to stop and tell the user. Do not attempt to fix anything, do not proceed, do not draft comments. Just stop and inform the user.
 
 #### Viewing Images
 

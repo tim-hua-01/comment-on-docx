@@ -186,13 +186,21 @@ def read_document_runs(docx_path: str) -> dict:
                             comment_locations[comment_id] = para_idx
 
             for i, comment in enumerate(doc.comments):
-                comment_id_str = str(getattr(comment, 'id', i))
+                comment_id_str = str(getattr(comment, 'comment_id', getattr(comment, 'id', i)))
                 para_idx = comment_locations.get(comment_id_str)
 
+                # python-docx .text misses runs inside <w:ins> (Google Docs exports).
+                # Fall back to extracting all <w:t> text from the XML element directly.
+                text = getattr(comment, 'text', '') or ''
+                if not text.strip():
+                    text = ''.join(
+                        t.text or '' for t in comment._element.iter(f'{W}t')
+                    )
+
                 comment_info = {
-                    'id': getattr(comment, 'id', i),
+                    'id': getattr(comment, 'comment_id', getattr(comment, 'id', i)),
                     'author': getattr(comment, 'author', 'Unknown'),
-                    'text': getattr(comment, 'text', ''),
+                    'text': text.strip(),
                     'para_idx': para_idx,
                 }
                 existing_comments.append(comment_info)
