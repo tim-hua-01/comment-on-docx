@@ -32,6 +32,10 @@ This skill requires a python environment with the `python-docx >= 1.2.0` package
 
 Then, you can ask Claude to install the skill for you and use it directly from Claude code.
 
+### Other models
+
+You can also clone the Github repo locally, then use cursor agent (with your preferred LLM) to comment up the documents. In my limited testing, I found Claude 4.6 Opus to be much better than Gemini 3.1 Pro and a bit better than GPT-5.2. However, GPT-5.2 is faster and still brings up good ideas. 
+
 ## Claude's workflow
 
 Claude first reads the Word file using the read_document_runs.py script. In Word's internal format, a "run" is the smallest unit of consistently-formatted text—a paragraph might contain several runs if different words are bolded, italicized, or otherwise styled. The script numbers each run sequentially, giving Claude precise anchors for placing comments. It also extracts images, footnotes, links, and tables. Next, Claude re-reads the references/commenting.md guidelines and drafts its comments. After drafting, Claude reviews its own comments for depth, concreteness, and coherence—though by default it doesn't do much at this stage without prompting. It then adds comments to the document, taking multiple passes if a comment targets a specific phrase within a run (which requires splitting the run). Finally, it saves the file.
