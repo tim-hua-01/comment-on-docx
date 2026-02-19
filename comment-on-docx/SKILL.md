@@ -11,6 +11,7 @@ Add thoughtful stylistic and content-wise comments to Microsoft Word (.docx) doc
 ## Prerequisites
 
 - `python-docx>=1.2.0`
+- `lxml` (comes with python-docx)
 - Helper scripts: `scripts/read_document_runs.py` and `scripts/docx_comment_helper.py` (bundled with this skill)
 - Access to the target `.docx` file
 
@@ -39,9 +40,15 @@ python scripts/read_document_runs.py "document.docx"
 **Output format:**
 ```
 📊 DOCUMENT STATISTICS:
-   Total runs: 5
+   Total runs: 7
    Total characters: 98
    Existing comments: 1
+   Images: 1
+
+🖼️  EXTRACTED IMAGES (saved to /tmp/docx_images_abc123/):
+   /tmp/docx_images_abc123/image1.png (Paragraph 2, Run 5)
+
+   ➡️  Use the Read tool to view each image file listed above for full document context.
 
 💬 EXISTING COMMENTS:
    [Jane] (Paragraph 0) Nice title
@@ -57,21 +64,37 @@ python scripts/read_document_runs.py "document.docx"
 [Run 2] [EMPTY]
 [Run 3] More text here.
 [Run 4] Final sentence. [BOLD]
+
+--- Paragraph 2 ---
+[Run 5] [IMAGE: image1.png]
+[Run 6] Figure 1: A chart showing results. [ITALIC]
 ================================================================================
 
-✅ Document read complete. Total runs: 5
-   (Make sure you see all runs from [Run 0] to [Run 4])
+✅ Document read complete. Total runs: 7
+   (Make sure you see all runs from [Run 0] to [Run 6])
+
+🖼️  IMPORTANT: This document contains 1 image(s).
+   Read the images from /tmp/docx_images_abc123/ to understand figures and diagrams.
 ```
 
 **What you're looking for:**
 - The total number of runs
 - All runs numbered from `[Run 0]` to `[Run N-1]`
-- Formatting indicators: `[BOLD]`, `[ITALIC]`, `[EMPTY]`
+- Formatting indicators: `[BOLD]`, `[ITALIC]`, `[EMPTY]`, `[IMAGE: filename]`
 - Existing comments to avoid duplicating feedback
+- **Images**: If the document contains images, the script extracts them to a temp directory and lists their paths
 
 **Verification**: Confirm you see the final run matching `Total runs - 1`. If the output seems truncated or you don't see all runs, **STOP and report the issue**.
 
-> **HARD STOP RULE**: If ANY run text ends with "..." or appears cut off, the document has NOT been fully read. You MUST stop immediately and fix the truncation issue before proceeding. Do NOT draft comments, do NOT write code, do NOT skip ahead. Commenting on text you haven't fully read produces low-quality, superficial feedback and wastes the user's time. There are no exceptions to this rule. Fix the read script or read the document another way first.
+> **HARD STOP RULE**: If ANY run text ends with "..." or appears cut off, the document has NOT been fully read. You MUST stop immediately and fix the truncation issue before proceeding. Do NOT draft comments, do NOT write code, do NOT skip ahead. Commenting on text you haven't fully read produces low-quality, superficial feedback and wastes the user's time. There are no exceptions to this rule. Fix the read script or read the document another way first. If you fail to fix the script, simply inform the user that you did not successfully read the document and do not proceed further. 
+
+#### Viewing Images
+
+If the document contains images (figures, charts, diagrams), the read script automatically extracts them to a temp directory and lists their file paths. **After reading all the text runs**, use the Read tool to view each extracted image file. This gives you full visual context for understanding figures referenced in the text.
+
+- Images appear in the run output as `[IMAGE: filename]` markers showing where they are positioned in the document
+- The extracted image paths are listed in the "EXTRACTED IMAGES" section at the top of the output
+- You can comment on text adjacent to images (e.g., captions, surrounding paragraphs) — you cannot comment directly on image-only runs since they have no text content
 
 ### Step 2: Draft Comments
 
@@ -339,6 +362,7 @@ Always follow the guideline in `references/commenting.md` when writing comments.
 ### scripts/read_document_runs.py
 - Reads document and numbers all runs sequentially
 - Shows formatting (bold, italic, empty)
+- Extracts images to a temp directory and shows `[IMAGE: filename]` markers in the run output
 - Lists existing comments with their paragraph locations
 - Provides verification that document was read completely
 
