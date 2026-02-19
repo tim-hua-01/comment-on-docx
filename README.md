@@ -26,18 +26,20 @@ Then, you can ask Claude to install the skill for you and use it directly from C
 
 ## Claude's workflow
 
-Claude reads the 
+Claude first reads the Word file using the `read_document_runs.py` script. The read script allows Claude to view images, footnotes, links, and tables. Then, Claude is supposed to re-read the `references/commenting.md` guidelines, and draft its comments. After successfully drafting the comments, Claude is told to reflect on them to check that they are indeed good comments. 
 
 ## Usage notes:
 
 - Existing comment threads are squashed if you download a Google doc (or, at least it is squashed for me). Claude can see where the existing comments are, but it is currently not instructed to respond to them.
 
+- If there are suggestions with track changes on, Claude will read the file as if all changes are accepted.
+
 - By default, I noticed that Claude tends to draft around ten comments in total regardless of the lengths of the piece. You can just prompt it to write more or less comments, although if you're doing this it might not bring up all the grammatical errors.
 
-- Claude loves to keep
+- Claude tends to barrel ahead even when something goes wrong. If comments appear missing or the document seems cut off, it may continue drafting anyway rather than stopping to flag the issue. I believe the read issues that caused truncation are now fixed, and `SKILL.md` instructs Claude to stop and raise an error if it suspects any part of the document wasn't fully read. Still, this may be a source of error.
 
 
-## Remainder of the ReadME file is Claude written:
+# Remainder of the ReadME file is Claude written:
 
 ## What it does
 

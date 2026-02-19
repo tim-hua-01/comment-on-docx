@@ -25,6 +25,8 @@ If you're Claude running in the web, use your local python environment.
 
 ## Workflow
 
+### Step 0: Read this SKILL.md file, and read the commenting guidelines in `references/commenting.md`
+
 ### Step 1: Read the Complete Document
 
 **CRITICAL**: You MUST read the ENTIRE document before adding comments.
@@ -105,7 +107,7 @@ If the document contains images (figures, charts, diagrams), the read script aut
 
 ### Step 2: Draft Comments
 
-Take time to formulate thoughtful, constructive comments. Open up `references/commenting.md` (bundled with this skill) for additional instructions. Read it in full and follow the instructions contained within. 
+Take time to formulate thoughtful, constructive comments. Open up `references/commenting.md` (bundled with this skill) for additional instructions. Re-read it in full and follow the instructions contained within. 
 
 MAKE SURE YOU RE-READ commenting.md after you've read the entire document as a refresher. Only then should you start drafting your comments.
 
