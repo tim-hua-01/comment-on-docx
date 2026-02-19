@@ -18,21 +18,26 @@ A = '{http://schemas.openxmlformats.org/drawingml/2006/main}'
 R_NS = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
 
 
-def iter_all_runs(para):
+def iter_all_runs(para, hyperlink_rels=None):
     """
-    Yield (run_element, is_hyperlink) for every <w:r> in the paragraph,
+    Yield (run_element, is_hyperlink, hyperlink_url) for every <w:r> in the paragraph,
     in document order, including runs nested inside <w:hyperlink> and <w:ins>.
     Skips runs inside <w:del> (proposed deletions / track changes).
     This shows the "all suggestions accepted" version of the document.
+
+    If hyperlink_rels is provided (dict mapping r:id -> URL), hyperlink_url
+    will be the resolved URL for runs inside <w:hyperlink> elements.
     """
     def _yield_runs(container):
         for child in container:
             tag = child.tag.split('}')[-1]
             if tag == 'r':
-                yield child, False
+                yield child, False, None
             elif tag == 'hyperlink':
+                rid = child.get(f'{R_NS}id')
+                url = hyperlink_rels.get(rid) if hyperlink_rels and rid else None
                 for inner in child.findall(f'{W}r'):
-                    yield inner, True
+                    yield inner, True, url
             elif tag == 'ins':
                 # Proposed insertions — recurse to pick up runs and hyperlinks
                 yield from _yield_runs(child)
@@ -189,8 +194,19 @@ def read_document_runs(docx_path: str) -> dict:
     image_dir = None
     rel_id_to_filename = {}
 
+    # Parse relationships from the docx zip
+    hyperlink_rels = {}
     with zipfile.ZipFile(docx_path) as z:
         has_images = any(f.startswith('word/media/') for f in z.namelist())
+
+        # Parse hyperlink relationships
+        rels_path = 'word/_rels/document.xml.rels'
+        if rels_path in z.namelist():
+            rels_xml = z.read(rels_path)
+            rels_tree = etree.fromstring(rels_xml)
+            for rel in rels_tree:
+                if 'hyperlink' in rel.get('Type', '').lower():
+                    hyperlink_rels[rel.get('Id')] = rel.get('Target', '')
 
     if has_images:
         image_dir, rel_id_to_filename = extract_images(docx_path)
@@ -208,7 +224,7 @@ def read_document_runs(docx_path: str) -> dict:
 
     # Collect all runs from all paragraphs, including table cells and hyperlink runs
     for para_idx, (para, table_info) in enumerate(_iter_document_paragraphs(doc)):
-        for run_elem, is_hyperlink in iter_all_runs(para):
+        for run_elem, is_hyperlink, hyperlink_url in iter_all_runs(para, hyperlink_rels):
             rPr = run_elem.find(f'{W}rPr')
             text = run_elem.findtext(f'{W}t', default='')
             bold = rPr is not None and rPr.find(f'{W}b') is not None if rPr is not None else False
@@ -228,6 +244,7 @@ def read_document_runs(docx_path: str) -> dict:
                 'bold': bold,
                 'italic': italic,
                 'is_hyperlink': is_hyperlink,
+                'hyperlink_url': hyperlink_url,
                 'image': image_filename,
                 'footnote_id': footnote_id,
                 'table_info': table_info,
@@ -396,7 +413,8 @@ def display_document_runs(docx_path: str) -> None:
         # Show formatting indicators
         formatting = []
         if run_info.get('is_hyperlink'):
-            formatting.append('LINK')
+            url = run_info.get('hyperlink_url')
+            formatting.append(f'LINK: {url}' if url else 'LINK')
         if run_info['bold']:
             formatting.append('BOLD')
         if run_info['italic']:

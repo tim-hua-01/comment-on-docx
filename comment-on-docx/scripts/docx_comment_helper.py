@@ -22,6 +22,10 @@ def _iter_all_runs(para):
     in document order, including runs nested inside <w:hyperlink> and <w:ins>.
     Skips runs inside <w:del> (proposed deletions / track changes).
     This shows the "all suggestions accepted" version of the document.
+
+    Note: the reader's iter_all_runs yields a 3rd element (hyperlink_url).
+    The commenter doesn't need URLs, so this version yields 2-tuples.
+    Both must iterate runs in the same order to keep global IDs in sync.
     """
     def _yield_runs(container):
         for child in container:
