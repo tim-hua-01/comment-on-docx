@@ -6,9 +6,9 @@
 
 This is a skill that lets Claude add comments to Microsoft Word documents (.docx). Claude reads the document—including figures, tables, and footnotes—drafts comments following the editorial guidelines in `references/commenting.md`, and inserts them as native Word comments. It never modifies the original file, instead outputting a separate "claude commented" copy.
 
-To use this with Google Docs, download the doc as a Word file first.[^1] You can then re-upload the commented version to Google Drive and optionally convert it back to a Google Doc. That said, it's often easier to open Claude's commented Word file alongside the original Google Doc and incorporate the feedback manually.
+To use this with Google Docs, download the doc as a Word file first.[^1] You can then re-upload the commented version to Google Drive and optionally convert it back to a Google Doc. That said, it's probably easier to open Claude's commented Word file alongside the original Google Doc and incorporate the feedback manually.
 
-I think Claude does a surprisingly good job at leaving constructive comments. For an example, see [this commented version](https://docs.google.com/document/d/19J3tkt-NeVkyLek8wWhElat8eHAqp6XaPdy1X57N5Qc/edit?usp=sharing) of Julian Statsny's post [Two proposed projects on abstract analogies for scheming](https://www.lesswrong.com/posts/5zsLpcTMtesgF7c8p/two-proposed-projects-on-abstract-analogies-for-scheming), produced with no additional instructions beyond "comment up this doc" ([transcript](https://claude.ai/share/c9a37ad8-1002-4ae6-9870-b1c4d603f00d)). I personally expect to use this skill on all future docs I write.
+I think Claude does a surprisingly good job at leaving constructive comments. For an example, see [this commented version](https://docs.google.com/document/d/19J3tkt-NeVkyLek8wWhElat8eHAqp6XaPdy1X57N5Qc/edit?usp=sharing) of Julian Statsny's post [Two proposed projects on abstract analogies for scheming](https://www.lesswrong.com/posts/5zsLpcTMtesgF7c8p/two-proposed-projects-on-abstract-analogies-for-scheming), produced with no additional instructions beyond "comment up this doc" ([transcript](https://claude.ai/share/c9a37ad8-1002-4ae6-9870-b1c4d603f00d)). I personally expect to use this skill on most future docs I write.
 
 [^1]: There technically is a Google Doc API, but everyone who I've talked to has had a bad time getting it to work, so we're sticking with this workaround for now.
 
@@ -41,6 +41,8 @@ You can also clone the Github repo locally, then use cursor agent (with your pre
 Claude first reads the Word file using the read_document_runs.py script. In Word's internal format, a "run" is the smallest unit of consistently-formatted text—a paragraph might contain several runs if different words are bolded, italicized, or otherwise styled. The script numbers each run sequentially, giving Claude precise anchors for placing comments. It also extracts images, footnotes, links, and tables. Next, Claude re-reads the references/commenting.md guidelines and drafts its comments. After drafting, Claude reviews its own comments for depth, concreteness, and coherence—though by default it doesn't do much at this stage without prompting. It then adds comments to the document, taking multiple passes if a comment targets a specific phrase within a run (which requires splitting the run). Finally, it saves the file.
 
 ## Usage notes:
+
+- The insturctions are designed to help Claude with commenting on conceptual alignment research. However, you could ask it for comments on other docs as well.
 
 - Existing comment threads are squashed if you download a Google doc (or, at least it is squashed for me). Claude can see where the existing comments are, but it is currently not instructed to respond to them.
 
